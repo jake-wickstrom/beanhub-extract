@@ -4,7 +4,6 @@ import functools
 import pathlib
 
 import pytest
-import pytz
 
 from beanhub_extract.data_types import Fingerprint
 from beanhub_extract.data_types import Transaction
@@ -20,11 +19,6 @@ from beanhub_extract.utils import strip_txn_base_path
     ],
 )
 def test_parse_date(date_str: str, expected: datetime.date):
-    """
-    Given a date string in the format YYYY-MM-DD
-    When parse_date is called
-    Should return the correct datetime.date object
-    """
     assert parse_date(date_str) == expected
 
 
@@ -93,25 +87,20 @@ def test_parse_date(date_str: str, expected: datetime.date):
         ),
     ],
 )
+
 def test_wealthsimple_extractor(
     fixtures_folder: pathlib.Path, input_file: str, expected: list[Transaction]
 ):
-    """
-    Given a Wealthsimple CSV file
-    When the extractor is called
-    Should extract the correct transactions
-    """
-    input_path = fixtures_folder / input_file
-    with open(input_path, "r", encoding="utf-8") as f:
-        extractor = WealthsimpleExtractor(f)
-        transactions = list(extractor())
-
-    # Strip the base path from the transactions for easier comparison
-    transactions = [
-        strip_txn_base_path(fixtures_folder, txn, pure_posix=True) for txn in transactions
-    ]
-
-    assert transactions == expected
+    with open(fixtures_folder / input_file, "rt", encoding="utf-8") as fo:
+        extractor = WealthsimpleExtractor(fo)
+        assert (
+            list(
+                map(
+                    functools.partial(strip_txn_base_path, fixtures_folder), extractor()
+                )
+            )
+            == expected
+        )
 
 
 @pytest.mark.parametrize(
@@ -127,29 +116,15 @@ def test_wealthsimple_extractor(
 def test_wealthsimple_detect(
     fixtures_folder: pathlib.Path, input_file: str, expected: bool
 ):
-    """
-    Given a file
-    When the detect method is called
-    Should correctly identify if it's a Wealthsimple CSV file
-    """
-    input_path = fixtures_folder / input_file
-    with open(input_path, "r", encoding="utf-8") as f:
-        extractor = WealthsimpleExtractor(f)
+    with open(fixtures_folder / input_file, "rt", encoding="utf-8") as fo:
+        extractor = WealthsimpleExtractor(fo)
         assert extractor.detect() == expected
 
 
 def test_wealthsimple_fingerprint(fixtures_folder: pathlib.Path):
-    """
-    Given a Wealthsimple CSV file
-    When the fingerprint method is called
-    Should generate the correct fingerprint
-    """
-    input_path = fixtures_folder / "wealthsimple.csv"
-    with open(input_path, "r", encoding="utf-8") as f:
-        extractor = WealthsimpleExtractor(f)
-        fingerprint = extractor.fingerprint()
-
-    assert fingerprint is not None
-    assert fingerprint.starting_date == datetime.date(2024, 4, 1)
-    assert isinstance(fingerprint.first_row_hash, str)
-    assert len(fingerprint.first_row_hash) > 0 
+    with open(fixtures_folder / "wealthsimple.csv", "rt", encoding="utf-8") as fo:
+        extractor = WealthsimpleExtractor(fo)
+        assert extractor.fingerprint() == Fingerprint(
+            starting_date=datetime.date(2024, 4, 1),
+            first_row_hash="f9d844138962e483beecd7f44ada98f0995810e4b1e3fc6d3b27d1b6189318b6",
+        ) 
