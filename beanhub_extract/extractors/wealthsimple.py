@@ -2,7 +2,6 @@ import csv
 import datetime
 import decimal
 import hashlib
-import os
 import typing
 
 from ..data_types import Fingerprint
@@ -61,20 +60,14 @@ class WealthsimpleExtractor(ExtractorBase):
         for i, row in enumerate(rows):
             date_str = row["date"]
             date = parse_date(date_str)
-            
-            # Determine transaction type
             transaction_type = row["transaction"]
-            
-            # Parse amount (positive for income, negative for expenses)
             amount = decimal.Decimal(row["amount"])
             
-            # Create transaction object
             kwargs = dict(
                 date=date,
                 desc=row["description"],
                 amount=amount,
                 type=transaction_type,
-                # Add additional fields to extra
                 extra={
                     "balance": decimal.Decimal(row["balance"])
                 }

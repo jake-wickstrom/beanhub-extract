@@ -127,4 +127,4 @@ def test_wealthsimple_fingerprint(fixtures_folder: pathlib.Path):
         assert extractor.fingerprint() == Fingerprint(
             starting_date=datetime.date(2024, 4, 1),
             first_row_hash="f9d844138962e483beecd7f44ada98f0995810e4b1e3fc6d3b27d1b6189318b6",
-        ) 
+        )
